@@ -444,5 +444,7 @@ if __name__== "__main__":
     #    clf2 = pickle.load(f)
     # Predict the fMRI responses for the validation set
     fmri_val_pred = model.predict(features_val)
-
-    compute_encoding_accuracy(fmri_val, fmri_val_pred, 3, modality)
+    
+    np.savetxt('test1.txt', fmri_val_pred)
+    b = np.loadtxt('test1.txt', dtype=int)
+    #compute_encoding_accuracy(fmri_val, fmri_val_pred, 3, modality)
