@@ -52,8 +52,3 @@ This notebook focuses on analyzing the fMRI data and its functional connectivity
 - **Confound Analysis**:
   - Evaluates the presence of confounders in the fMRI data and their impact on functional connectivity.
 
-## Repository Structure
-
-# **The Algonauts Project 2025 Challenge - Development Kit Tutorial**
-
-![Original documentation](https://drive.google.com/uc?export=view&id=1m-N7pq4nEG_fXmEOSXIqZ4ONszkR_Wfi)
