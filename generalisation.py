@@ -305,7 +305,7 @@ def align_features_and_fmri_samples(features, fmri, excluded_samples_start,
     ### Output ###
     return aligned_features, aligned_fmri
 
-def compute_encoding_accuracy(fmri_val, fmri_val_pred, subject, modality):
+def compute_encoding_accuracy(fmri_val, fmri_val_pred):
     """
     Compare the  recorded (ground truth) and predicted fMRI responses, using a
     Pearson's correlation. The comparison is perfomed independently for each
@@ -331,33 +331,10 @@ def compute_encoding_accuracy(fmri_val, fmri_val_pred, subject, modality):
             fmri_val_pred[:, p])[0]
     mean_encoding_accuracy = np.round(np.mean(encoding_accuracy), 3)
 
-    ### Map the prediction accuracy onto a 3D brain atlas for plotting ###
-    atlas_file = f'sub-0{subject}_space-MNI152NLin2009cAsym_atlas-Schaefer18_parcel-1000Par7Net_desc-dseg_parcellation.nii.gz'
-    atlas_path = os.path.join(initial_dir, 'data', 'algonauts_2025.competitors',
-        'fmri', f'sub-0{subject}', 'atlas', atlas_file)
-    atlas_masker = NiftiLabelsMasker(labels_img=atlas_path)
-    atlas_masker.fit()
-    encoding_accuracy_nii = atlas_masker.inverse_transform(encoding_accuracy)
-
-    ### Plot the encoding accuracy ###
-    title = f"Encoding accuracy, sub-0{subject}, modality-{modality}, mean accuracy: " + str(mean_encoding_accuracy)
-    display = plotting.plot_glass_brain(
-        encoding_accuracy_nii,
-        display_mode="lyrz",
-        cmap='hot_r',
-        colorbar=True,
-        plot_abs=False,
-        symmetric_cbar=False,
-        title=title
-    )
-    colorbar = display._cbar
-    colorbar.set_label("Pearson's $r$", rotation=90, labelpad=12, fontsize=12)
-    #plotting.show()
-    display.savefig('pretty_brain.png')
-    display.close()
+    return mean_encoding_accuracy
 
 
-def model():
+def model(cv):
 
     backend = set_backend("torch_cuda", on_error="warn")
     alphas = np.logspace(1, 20, 20)
@@ -440,11 +417,20 @@ if __name__== "__main__":
     model.fit(features_train_all, fmri_train_all)
     with open('model.pkl','wb') as f:
         pickle.dump(model,f)
+
     #with open('model.pkl', 'rb') as f:
     #    clf2 = pickle.load(f)
+    
     # Predict the fMRI responses for the validation set
     fmri_val_pred = model.predict(features_val)
     
     np.savetxt('test1.txt', fmri_val_pred)
-    b = np.loadtxt('test1.txt', dtype=int)
-    #compute_encoding_accuracy(fmri_val, fmri_val_pred, 3, modality)
+    #b = np.loadtxt('test1.txt', dtype=int)
+
+    compute_encoding_accuracy(fmri_val, fmri_val_pred, 3, modality)
+    with open("demofile.txt", "a") as f:
+        f.write("Subject: " + str(3) + "\n")
+        f.write("Modality: " + modality + "\n")
+        f.write("Mean encoding accuracy: " + str(compute_encoding_accuracy(fmri_val, fmri_val_pred)) + "\n")
+    print("Mean encoding accuracy:", compute_encoding_accuracy(fmri_val, fmri_val_pred))
+    print("Results saved to demofile.txt")
