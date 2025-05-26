@@ -6,25 +6,22 @@ import numpy as np
 import pandas as pd
 import h5py
 import string
-from tqdm.notebook import tqdm
 from scipy.stats import pearsonr
 from nilearn import plotting
-from nilearn.maskers import NiftiLabelsMasker
 import zipfile
-from voxelwise_tutorials.viz import plot_flatmap_from_mapper
 from sklearn.model_selection import check_cv
 from voxelwise_tutorials.utils import generate_leave_one_run_out
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from voxelwise_tutorials.delayer import Delayer
 from himalaya.kernel_ridge import KernelRidgeCV
-#from himalaya.ridge import RidgeCV
 from himalaya.backend import set_backend
 import pickle
 
 root_data_dir = '/home/ckj24/genevieve/algonauts_2025_challenge/data/algonauts_2025.competitors'
 initial_dir = os.getcwd() 
-
+backend = set_backend("torch_cuda", on_error="warn")
+print(backend)
 subjects = [1,2,3]  # ["1", "2", "3", "5"] 
 
 modality = "all"  #["visual", "audio", "language", "all"]
@@ -333,12 +330,8 @@ def compute_encoding_accuracy(fmri_val, fmri_val_pred):
 
     return mean_encoding_accuracy
 
-
 def model(cv):
-
-    backend = set_backend("torch_cuda", on_error="warn")
     alphas = np.logspace(1, 20, 20)
-
     pipeline = make_pipeline(
             StandardScaler(with_mean=True, with_std=False),
             Delayer(delays=[1, 2, 3, 4]),
@@ -391,46 +384,42 @@ if __name__== "__main__":
     print(features_train_all.shape)
     print('(Train samples × Features)')
     # Load the fMRI responses for validation
-
     # Align the stimulus features with the fMRI responses for the validation movies
     fmri_val = load_fmri(root_data_dir, 3)
     features_val, fmri_val = align_features_and_fmri_samples(features, fmri_val,
         excluded_samples_start, excluded_samples_end, hrf_delay, stimulus_window,
         movies_val)
-
-    # Remove unused variables from memory
-    #del features, fmri
-
-    # Print the shape of the test fMRI responses and stimulus features: note
-    # that the two have the same sample size!
+    # Print the shape of the test fMRI responses and stimulus features 
     print("Validation fMRI responses shape:", fmri_val.shape)
     print('(Validation samples × Parcels)')
     print("\nValidation stimulus features shape:", features_val.shape)
     print('(Validation samples × Features)')
-    
+    # Remove unused variables from memory
+    del features, fmri_subjects
+    backend = set_backend("torch_cuda", on_error="warn")
     run_onsets = [x for x in np.arange(0, fmri_train_all.shape[0], stimulus_window)][:-1]
-
     n_samples_train = fmri_train_all.shape[0]
     cv = generate_leave_one_run_out(n_samples_train, run_onsets)
     cv = check_cv(cv) 
+    print("running model")
     model = model(cv)
     model.fit(features_train_all, fmri_train_all)
     with open('model.pkl','wb') as f:
         pickle.dump(model,f)
 
-    #with open('model.pkl', 'rb') as f:
+    # with open('model.pkl', 'rb') as f:
     #    clf2 = pickle.load(f)
     
     # Predict the fMRI responses for the validation set
     fmri_val_pred = model.predict(features_val)
-    
+    fmri_val_pred=fmri_val_pred.numpy()
     np.savetxt('test1.txt', fmri_val_pred)
     #b = np.loadtxt('test1.txt', dtype=int)
-
-    compute_encoding_accuracy(fmri_val, fmri_val_pred, 3, modality)
+    mean_acc=compute_encoding_accuracy(fmri_val, fmri_val_pred, 3, modality)
     with open("demofile.txt", "a") as f:
         f.write("Subject: " + str(3) + "\n")
         f.write("Modality: " + modality + "\n")
-        f.write("Mean encoding accuracy: " + str(compute_encoding_accuracy(fmri_val, fmri_val_pred)) + "\n")
-    print("Mean encoding accuracy:", compute_encoding_accuracy(fmri_val, fmri_val_pred))
+        f.write("Mean encoding accuracy: " + str(mean_acc) + "\n")
+    print("Mean encoding accuracy:", mean_acc)
     print("Results saved to demofile.txt")
+ 
