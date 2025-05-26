@@ -142,7 +142,6 @@ def load_fmri(root_data_dir, subject):
         del fmri[keys_movie[0]]
         del fmri[keys_movie[1]]
 
-    ### Output ###
     return fmri
 
 def align_features_and_fmri_samples(features, fmri, excluded_samples_start,
@@ -406,16 +405,12 @@ if __name__== "__main__":
     model.fit(features_train_all, fmri_train_all)
     with open('model.pkl','wb') as f:
         pickle.dump(model,f)
-
-    # with open('model.pkl', 'rb') as f:
-    #    clf2 = pickle.load(f)
-    
     # Predict the fMRI responses for the validation set
     fmri_val_pred = model.predict(features_val)
     fmri_val_pred=fmri_val_pred.numpy()
     np.savetxt('test1.txt', fmri_val_pred)
     #b = np.loadtxt('test1.txt', dtype=int)
-    mean_acc=compute_encoding_accuracy(fmri_val, fmri_val_pred, 3, modality)
+    mean_acc=compute_encoding_accuracy(fmri_val, fmri_val_pred)
     with open("demofile.txt", "a") as f:
         f.write("Subject: " + str(3) + "\n")
         f.write("Modality: " + modality + "\n")
