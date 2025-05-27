@@ -396,6 +396,7 @@ if __name__== "__main__":
     # Remove unused variables from memory
     del features, fmri_subjects
     backend = set_backend("torch_cuda", on_error="warn")
+    print(backend)
     run_onsets = [x for x in np.arange(0, fmri_train_all.shape[0], stimulus_window)][:-1]
     n_samples_train = fmri_train_all.shape[0]
     cv = generate_leave_one_run_out(n_samples_train, run_onsets)
