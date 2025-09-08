@@ -227,7 +227,6 @@ def align_features_and_fmri_samples(features, fmri, excluded_samples_start,
             # Exclude the first and last fMRI samples
             fmri_split = fmri_split[excluded_samples_start:-excluded_samples_end]
             aligned_fmri = np.append(aligned_fmri, fmri_split, 0)
-
             ### Loop over fMRI samples ###
             for s in range(len(fmri_split)):
                 # Empty variable containing the stimulus features of all
@@ -298,15 +297,14 @@ def align_features_and_fmri_samples(features, fmri, excluded_samples_start,
 
 def create_kernal():
     # Find the start and end of each feature space X in Xs
-    n_features_list = np.array([1000,410,1000,1000])
-    feature_names = ['visual', 'audio', 'language','feature2']
+    n_features_list = np.array([1000,1000,1000])
+    feature_names = ['visual', 'audio', 'language']
     start_and_end = np.concatenate([[0], np.cumsum(n_features_list)])
     slices = [
         slice(start, end)
         for start, end in zip(start_and_end[:-1], start_and_end[1:])
     ]
-
-    kernelizers = [(name, Kernelizer(), slice_)
+    kernelizers = [(name, Kernelizer(kernel="polynomial"), slice_)
                 for name, slice_ in zip(feature_names, slices)]
     column_kernelizer = ColumnKernelizer(kernelizers)
     return column_kernelizer
@@ -358,7 +356,7 @@ def model():
                         diagonalize_method='svd',
                         jitter_alphas=True)
 
-    model = MultipleKernelRidgeCV(kernels="precomputed", solver="random_search",
+    model = MultipleKernelRidgeCV(kernels="precomputed", solver="cholesky",
                                 solver_params=solver_params)
     return model
 
